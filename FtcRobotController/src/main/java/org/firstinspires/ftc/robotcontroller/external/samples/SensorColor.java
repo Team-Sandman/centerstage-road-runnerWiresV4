@@ -192,7 +192,7 @@ public class SensorColor extends LinearOpMode {
       Color.colorToHSV(colors.toColor(), hsvValues);
 
       telemetry.addLine()
-              .addData("Red", "%.3f", colors.red)
+              .addData("Red",  colors.red)
               .addData("Green", "%.3f", colors.green)
               .addData("Blue", "%.3f", colors.blue);
       telemetry.addLine()

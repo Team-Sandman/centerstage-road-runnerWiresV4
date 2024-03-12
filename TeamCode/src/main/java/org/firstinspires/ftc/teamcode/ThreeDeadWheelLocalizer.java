@@ -17,9 +17,9 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 public final class ThreeDeadWheelLocalizer implements Localizer {
     public static class Params {
         //TODO Step 11.1 : Update values of par0YTicks, part1YTicks, perpXTicks from AngularRampLogger
-        public double par0YTicks = 0.0; // y position of the first parallel encoder (in tick units)
-        public double par1YTicks = 1.0; // y position of the second parallel encoder (in tick units)
-        public double perpXTicks = 0.0; // x position of the perpendicular encoder (in tick units)
+        public double par0YTicks = 2289.82717787; // y position of the first parallel encoder (in tick units) was 2218.15414657
+        public double par1YTicks = -2449.49030474; // y position of the second parallel encoder (in tick units) was -2511.4185537
+        public double perpXTicks = 284.567610996; // x position of the perpendicular encoder (in tick units) was 428.952667531
     }
 
     public static Params PARAMS = new Params();
@@ -31,10 +31,12 @@ public final class ThreeDeadWheelLocalizer implements Localizer {
     private int lastPar0Pos, lastPar1Pos, lastPerpPos;
 
     public ThreeDeadWheelLocalizer(HardwareMap hardwareMap, double inPerTick) {
-        //TODO Step 3.1 : Update hardware configuration names for dead wheel encoders
+        //Step 3.1 : Update hardware configuration names for dead wheel encoders
         par0 = new OverflowEncoder(new RawEncoder(hardwareMap.get(DcMotorEx.class, "par0")));
         par1 = new OverflowEncoder(new RawEncoder(hardwareMap.get(DcMotorEx.class, "par1")));
         perp = new OverflowEncoder(new RawEncoder(hardwareMap.get(DcMotorEx.class, "perp")));
+
+
 
         lastPar0Pos = par0.getPositionAndVelocity().position;
         lastPar1Pos = par1.getPositionAndVelocity().position;

@@ -49,8 +49,8 @@ import java.util.List;
 /**
  * FTC WIRES Autonomous Example for only vision detection using tensorflow and park
  */
-@Autonomous(name = "FTC Wires Autonomous Mode", group = "00-Autonomous", preselectTeleOp = "FTC Wires TeleOp")
-public class FTCWiresAutonomous extends LinearOpMode {
+@Autonomous(name = "FTC Wires Autonomous Mode (New)", group = "00-Autonomous", preselectTeleOp = "FTC Wires TeleOp")
+public class FTCWiresAutonomousNew extends LinearOpMode {
 
     public static String TEAM_NAME = "Team Sandman"; //: Enter team Name
     public static int TEAM_NUMBER = 16312; //: Enter team Number
@@ -90,7 +90,14 @@ public class FTCWiresAutonomous extends LinearOpMode {
         RED_LEFT,
         RED_RIGHT
     }
+    public enum PARK_POSITION{
+        BLUE_LEFT,
+        BLUE_RIGHT,
+        RED_LEFT,
+        RED_RIGHT
+    }
     public static START_POSITION startPosition;
+    public static PARK_POSITION parkPosition;
 
     public enum IDENTIFIED_SPIKE_MARK_LOCATION {
         LEFT,
@@ -98,6 +105,8 @@ public class FTCWiresAutonomous extends LinearOpMode {
         RIGHT
     }
     public static IDENTIFIED_SPIKE_MARK_LOCATION identifiedSpikeMarkLocation = IDENTIFIED_SPIKE_MARK_LOCATION.LEFT;
+    public Pose2d initPose = new Pose2d(0, 0, 0); // Starting Pose
+    public Pose2d parkPose = new Pose2d(0, 0, 0); // Parking Pose
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -117,6 +126,7 @@ public class FTCWiresAutonomous extends LinearOpMode {
 
         while (!isStopRequested() && !opModeIsActive()) {
             telemetry.addData("Selected Starting Position", startPosition);
+            telemetry.addData("Selected Parking Position", parkPosition);
 
             //Run Vuforia Tensor Flow and keep watching for the identifier in the Signal Cone.
             runTfodTensorFlow();
@@ -131,27 +141,32 @@ public class FTCWiresAutonomous extends LinearOpMode {
         }
     }   // end runOpMode()
 
-
+    //Static Locations
+    Pose2d CENTER_FIELD = new Pose2d(0,0,Math.toRadians(180));
+    Pose2d RED_RIGHT_START = new Pose2d(15.98,-61.35,Math.toRadians(270));
+    Pose2d RED_LEFT_START = new Pose2d(0.0,0.0,Math.toRadians(270));    //Need Actual Coordinates
+    Pose2d BLUE_RIGHT_START = new Pose2d(0.0,0.0,Math.toRadians(90));   //Need Actual Coordinates
+    Pose2d BLUE_LEFT_START = new Pose2d(0.0,0.0,Math.toRadians(90));    //Need Actual Coordinates
+    Pose2d PARK_RED_RIGHT = new Pose2d(65.79,-58.53,Math.toRadians(180));
+    Pose2d PARK_RED_LEFT = new Pose2d(62.69,-9.35,Math.toRadians(180));
+    Pose2d PARK_BLUE_RIGHT = new Pose2d(63.18,13.20,Math.toRadians(180));
+    Pose2d PARK_BLUE_LEFT = new Pose2d(63.53,60.78,Math.toRadians(180));
+    Pose2d RED_BACKDROP_CENTER = new Pose2d(53.14,-34.66,Math.toRadians(180));  //Guesstimate based on inverse of BLUE
+    Pose2d BLUE_BACKDROP_CENTER = new Pose2d(53.14,34.66,Math.toRadians(180));
 
     public void runAutonoumousMode() {
-        //Initialize Pose2d as desired
-        Pose2d initPose = new Pose2d(0, 0, 0); // Starting Pose
-        Pose2d moveBeyondTrussPose = new  Pose2d(0,0,0);
-        Pose2d dropPurplePixelPose = new Pose2d(0, 0, 0);
-        Pose2d midwayPose1 = new Pose2d(0,0,0);
-        Pose2d midwayPose1a = new Pose2d(0,0,0);
-        Pose2d intakeStack = new Pose2d(0,0,0);
-        Pose2d midwayPose2 = new Pose2d(0,0,0);
-        Pose2d dropYellowPixelPose = new Pose2d(0, 0, 0);
-        Pose2d parkPose = new Pose2d(0,0, 0);
+
+
         double waitSecondsBeforeDrop = 0;
 
         MecanumDrive drive = new MecanumDrive(hardwareMap, initPose);
 
+        PerryThePlatypusIntake intake = new PerryThePlatypusIntake();
 
-        PerryThePlatypusIntake  intake = new PerryThePlatypusIntake();
         intake.initIntake(hardwareMap); //added to see if can get intake to work
+
         Lift lift = new Lift();
+
         PixelDropper pixelDrop = new PixelDropper();
 
         boolean PixelDropperOpen = false;
@@ -160,193 +175,17 @@ public class FTCWiresAutonomous extends LinearOpMode {
 
         pixelDrop.initPixel_Servo(hardwareMap);
 
-        initPose = new Pose2d(0, 0, Math.toRadians(180)); //Starting pose
-        moveBeyondTrussPose = new Pose2d(15,0,Math.toRadians(180));
-
-        switch (startPosition) {
-            case BLUE_LEFT:
-                drive = new MecanumDrive(hardwareMap, initPose);
-                switch(identifiedSpikeMarkLocation){
-                    case LEFT:
-                        dropPurplePixelPose = new Pose2d(25.5, 8, Math.toRadians(180));//x was 25.5 y was 8
-                        dropYellowPixelPose = new Pose2d(21.6, 37.8, Math.toRadians(90)); //x was 23
-                        break;
-                    case MIDDLE:
-                        dropPurplePixelPose = new Pose2d(30, 3, Math.toRadians(180));
-                        dropYellowPixelPose = new Pose2d(29.5, 37.8,  Math.toRadians(90));//x originally 30
-                        break;
-                    case RIGHT:
-                        dropPurplePixelPose = new Pose2d(26.8, -7
-                                , Math.toRadians(124));//x was 30  y was -9 mtr was -45
-                        dropYellowPixelPose = new Pose2d(32, 37.8, Math.toRadians(90));//x was 31.5
-
-                        break;
-                }
-                midwayPose1 = new Pose2d(14, 13, Math.toRadians(45)); //was -45 in mathtoradians
-                waitSecondsBeforeDrop = 2; //TODO: Adjust time to wait for alliance partner to move from board
-                parkPose = new Pose2d(3, 35, Math.toRadians(95));
-                break;
-
-            case RED_RIGHT:
-                drive = new MecanumDrive(hardwareMap, initPose);
-                switch(identifiedSpikeMarkLocation){
-                    case LEFT:
-                        dropPurplePixelPose = new Pose2d(30, 9, Math.toRadians(225));
-                        dropYellowPixelPose = new Pose2d(34, -39, Math.toRadians(267));
-                        break;
-                    case MIDDLE:
-                        dropPurplePixelPose = new Pose2d(28, -1, Math.toRadians(180));//Origin x was 30
-                        dropYellowPixelPose = new Pose2d(27, -39,  Math.toRadians(267));//x was 29 heading was 90 y was -38
-                        break;
-                    case RIGHT:
-                        dropPurplePixelPose = new Pose2d(26, -9, Math.toRadians(180));
-                        dropYellowPixelPose = new Pose2d(20, -39, Math.toRadians(267));
-                        break;
-                }
-                midwayPose1 = new Pose2d(14, -13, Math.toRadians(267));
-                waitSecondsBeforeDrop = 2; //TODO: Adjust time to wait for alliance partner to move from board
-                parkPose = new Pose2d(4, -30, Math.toRadians(-90
-                ));
-                break;
-
-            case BLUE_RIGHT:
-                drive = new MecanumDrive(hardwareMap, initPose);
-                switch(identifiedSpikeMarkLocation){
-                    case LEFT:
-                        dropPurplePixelPose = new Pose2d(26.5, 9.5, Math.toRadians(225));
-                        dropYellowPixelPose = new Pose2d(21.6, 91.4, Math.toRadians(90));//was 27,86,-90
-                        break;
-                    case MIDDLE:
-                        dropPurplePixelPose = new Pose2d(30, -3, Math.toRadians(180));
-                        dropYellowPixelPose = new Pose2d(29.5, 91.4, Math.toRadians(90));
-                        break;
-                    case RIGHT:
-                        dropPurplePixelPose = new Pose2d(24, -9, Math.toRadians(180));
-                        dropYellowPixelPose = new Pose2d(32.2, 91.4, Math.toRadians(90));
-                        break;
-                }
-                midwayPose1 = new Pose2d(3, -3, Math.toRadians(180));//was 3,-3,180 for purple pixel only
-                midwayPose1a = new Pose2d(18, -18, Math.toRadians(90));//was 18,-18, 90
-                intakeStack = new Pose2d(3, 1,Math.toRadians(90));
-                midwayPose2 = new Pose2d(3, 62, Math.toRadians(90));//was 50,62,90
-                waitSecondsBeforeDrop = 2; //TODO: Adjust time to wait for alliance partner to move from board
-                parkPose = new Pose2d(30, 91.4, Math.toRadians(90));//was 50,84,90
-                break;
-
-            case RED_LEFT:
-                drive = new MecanumDrive(hardwareMap, initPose);
-                switch(identifiedSpikeMarkLocation){
-                    case LEFT:
-                        dropPurplePixelPose = new Pose2d(27.5, 9.8, Math.toRadians(180));
-                        dropYellowPixelPose = new Pose2d(34, -91.2, Math.toRadians(267));//was 37,-86,90
-                        break;
-                    case MIDDLE:
-                        dropPurplePixelPose = new Pose2d(30, 0, Math.toRadians(180));
-                        dropYellowPixelPose = new Pose2d(24, -91.2, Math.toRadians(267));
-                        break;
-                    case RIGHT:
-                        dropPurplePixelPose = new Pose2d(25.5, -8, Math.toRadians(112));
-                        dropYellowPixelPose = new Pose2d(20, -91.2, Math.toRadians(267));
-                        break;
-                }
-                midwayPose1 = new Pose2d(3, -3, Math.toRadians(180));
-                midwayPose1a = new Pose2d(18, 18, Math.toRadians(267));
-                intakeStack = new Pose2d(3, 1,Math.toRadians(267));
-                midwayPose2 = new Pose2d(4, -70, Math.toRadians(267));//had -62 for y
-                waitSecondsBeforeDrop = 1; //TODO: Adjust time to wait for alliance partner to move from board
-                parkPose = new Pose2d(3, -91.4, Math.toRadians(267));
-                break;
-        }
-
-        //Move robot to dropPurplePixel based on identified Spike Mark Location
+        drive = new MecanumDrive(hardwareMap, initPose);
         Actions.runBlocking(
                 drive.actionBuilder(drive.pose)
-                        .strafeToLinearHeading(moveBeyondTrussPose.position, moveBeyondTrussPose.heading)
-                        .strafeToLinearHeading(dropPurplePixelPose.position, dropPurplePixelPose.heading)
-                        .build());
-
-        //TODO : Code to drop Purple Pixel on Spike Mark
-
-        safeWaitSeconds(1);
-        intake.intake(.2);
-
-       // pixelDrop.linkageForward();
-        safeWaitSeconds(2);
-        intake.intake(0);
-
-
-        //Move robot to midwayPose1
-        Actions.runBlocking(
-                drive.actionBuilder(drive.pose)
-                        .strafeToLinearHeading(midwayPose1.position, midwayPose1.heading)
-                        .build());
-
-        //For Blue Right and Red Left, intake pixel from stack
-        if (startPosition == START_POSITION.BLUE_RIGHT ||
-                startPosition == START_POSITION.RED_LEFT) {
-            safeWaitSeconds(1); //added timer to halt further movement set to 29 for purple pixel anly auto
-            Actions.runBlocking(
-                    drive.actionBuilder(drive.pose)
-                            .strafeToLinearHeading(midwayPose1a.position, midwayPose1a.heading)
-                            .strafeToLinearHeading(intakeStack.position, intakeStack.heading)
-                            .build());
-
-            //TODO : Code to intake pixel from stack
-            safeWaitSeconds(1);
-
-            //Move robot to midwayPose2 and to dropYellowPixelPose
-            Actions.runBlocking(
-                    drive.actionBuilder(drive.pose)
-                            .strafeToLinearHeading(midwayPose2.position, midwayPose2.heading)
-                            .build());
-        }
-        pixelDrop.linkageForward();
-        safeWaitSeconds(waitSecondsBeforeDrop);
-
-        //Move robot to midwayPose2 and to dropYellowPixelPose
-        Actions.runBlocking(
-                drive.actionBuilder(drive.pose)
-                        .setReversed(true)
-                        //.splineToLinearHeading(dropYellowPixelPose,0)
-                        .strafeToConstantHeading(new Vector2d(dropYellowPixelPose.position.x, dropYellowPixelPose.position.y))//Reduce the rotation until paralell to backdrop.
-                .build());
-
-
-        //TODO : Code to drop Pixel on Backdrop
-
-        safeWaitSeconds(1);
-
-        lift.autoLift(-740);//was 740
-
-        safeWaitSeconds(3);
-        pixelDrop.pixelDrop();
-
-        safeWaitSeconds(1);
-
-        pixelDrop.pixelDropClose();
-        //lift.autoLift(0);
-        safeWaitSeconds(1);
-            pixelDrop.linkageBackward();
-            safeWaitSeconds(1);
-
-
-
-
-
-
-
-
-        //lift.lift(.5 * gamepad2.right_stick_y); //We need to run using encoder
-        //Move robot to park in Backstage
-        Actions.runBlocking(
-                drive.actionBuilder(drive.pose)
+                        .strafeToLinearHeading(CENTER_FIELD.position, CENTER_FIELD.heading)
                         .strafeToLinearHeading(parkPose.position, parkPose.heading)
-                        //.splineToLinearHeading(parkPose,0)
                         .build());
+
     }
 
 
-    //Method to select starting position using X, Y, A, B buttons on gamepad
+    //Method to select starting & parking positions using X, Y, A, B buttons on gamepad
     public void selectStartingPosition() {
         telemetry.setAutoClear(true);
         telemetry.clearAll();
@@ -361,25 +200,123 @@ public class FTCWiresAutonomous extends LinearOpMode {
             telemetry.addData("    Red Left    ", "(B / O)");
             telemetry.addData("    Red Right  ", "(A / X)");
             if(gamepad1.x){
+                //Start position BLUE_LEFT
                 startPosition = START_POSITION.BLUE_LEFT;
+                initPose = BLUE_LEFT_START;
+                boolean parkingSelected = false;
+                telemetry.clearAll();
+                do {
+                    //Set BLUE parking
+                    sleep(500);
+                    telemetry.addData("Select Parking Position", "");
+                    telemetry.addData("    Park BLUE Left   ", "(X / ▢)");
+                    telemetry.addData("    Park BLUE Right   ", "(B / O)");
+                    if (gamepad1.x) {
+                        parkPosition = PARK_POSITION.BLUE_LEFT;
+                        parkPose = PARK_BLUE_LEFT;
+                        parkingSelected=true;
+                        //break;
+                    }
+                    if (gamepad1.b) {
+                        parkPosition = PARK_POSITION.BLUE_RIGHT;
+                        parkPose = PARK_BLUE_RIGHT;
+
+                        parkingSelected=true;
+                        //break;
+                    }
+                    telemetry.update();
+                }while(parkingSelected==false);
                 break;
             }
             if(gamepad1.y){
+                //Start position BLUE_RIGHT
                 startPosition = START_POSITION.BLUE_RIGHT;
+                initPose = BLUE_RIGHT_START;
+                boolean parkingSelected = false;
+                telemetry.clearAll();
+                do {
+                    //Set BLUE parking
+                    sleep(500);
+                    telemetry.addData("Select Parking Position", "");
+                    telemetry.addData("    Park BLUE Left   ", "(X / ▢)");
+                    telemetry.addData("    Park BLUE Right   ", "(B / O)");
+                    if (gamepad1.x) {
+                        parkPosition = PARK_POSITION.BLUE_LEFT;
+                        parkPose = PARK_BLUE_LEFT;
+                        parkingSelected=true;
+                        //break;
+                    }
+                    if (gamepad1.b) {
+                        parkPosition = PARK_POSITION.BLUE_RIGHT;
+                        parkPose = PARK_BLUE_RIGHT;
+                        parkingSelected=true;
+                        //break;
+                    }
+                    telemetry.update();
+                }while(parkingSelected==false);
                 break;
             }
             if(gamepad1.b){
+                //Start position RED_LEFT
                 startPosition = START_POSITION.RED_LEFT;
+                initPose = RED_LEFT_START;
+                boolean parkingSelected = false;
+                telemetry.clearAll();
+                do {
+                    //Set RED parking
+                    sleep(500);
+                    telemetry.addData("Select Parking Position", "");
+                    telemetry.addData("    Park RED Left   ", "(X / ▢)");
+                    telemetry.addData("    Park RED Right   ", "(B / O)");
+                    if (gamepad1.x) {
+                        parkPosition = PARK_POSITION.RED_LEFT;
+                        parkPose = PARK_RED_LEFT;
+                        parkingSelected=true;
+                        //break;
+                    }
+                    if (gamepad1.b) {
+                        parkPosition = PARK_POSITION.RED_RIGHT;
+                        parkPose = PARK_RED_RIGHT;
+                        parkingSelected=true;
+                        //break;
+                    }
+                    telemetry.update();
+                }while(parkingSelected==false);
                 break;
             }
             if(gamepad1.a){
+                //Start position RED_RIGHT
                 startPosition = START_POSITION.RED_RIGHT;
+                initPose = RED_RIGHT_START;
+                boolean parkingSelected = false;
+                telemetry.clearAll();
+                do {
+                    //Set RED parking
+                    sleep(500);
+                    telemetry.addData("Select Parking Position","");
+                    telemetry.addData("    Park RED Left   ", "(X / ▢)");
+                    telemetry.addData("    Park RED Right   ", "(B / O)");
+                    if(gamepad1.x){
+                        parkPosition = PARK_POSITION.RED_LEFT;
+                        parkPose = PARK_RED_LEFT;
+                        parkingSelected=true;
+                        //break;
+                    }
+                    if(gamepad1.b){
+                        parkPosition = PARK_POSITION.RED_RIGHT;
+                        parkPose = PARK_RED_RIGHT;
+                        parkingSelected=true;
+                        //break;
+                    }
+                    telemetry.update();
+                } while (parkingSelected==false);
                 break;
             }
             telemetry.update();
         }
         telemetry.clearAll();
     }
+
 
     //method to wait safely with stop button working if needed. Use this instead of sleep
     public void safeWaitSeconds(double time) {
@@ -395,19 +332,19 @@ public class FTCWiresAutonomous extends LinearOpMode {
     private void initTfod() {
 
         // Create the TensorFlow processor the easy way.
-       // tfod = TfodProcessor.easyCreateWithDefaults();
+        // tfod = TfodProcessor.easyCreateWithDefaults();
 
         // Create the vision portal the easy way.
-       // if (USE_WEBCAM) {
-       //     visionPortal = VisionPortal.easyCreateWithDefaults(
-       //         hardwareMap.get(WebcamName.class, "Webcam 1"), tfod);
-      //  } else {
-       //     visionPortal = VisionPortal.easyCreateWithDefaults(
+        // if (USE_WEBCAM) {
+        //     visionPortal = VisionPortal.easyCreateWithDefaults(
+        //         hardwareMap.get(WebcamName.class, "Webcam 1"), tfod);
+        //  } else {
+        //     visionPortal = VisionPortal.easyCreateWithDefaults(
         //        BuiltinCameraDirection.BACK, tfod);
-       // }
+        // }
 
         // Set confidence threshold for TFOD recognitions, at any time.
-       // tfod.setMinResultConfidence(0.2f); //was 0.095f
+        // tfod.setMinResultConfidence(0.2f); //was 0.095f
 
         //code from conceptTensorFlowObjectDetection to use our model
         tfod = new TfodProcessor.Builder()
@@ -477,7 +414,7 @@ public class FTCWiresAutonomous extends LinearOpMode {
             identifiedSpikeMarkLocation = IDENTIFIED_SPIKE_MARK_LOCATION.LEFT;
         }
 
-            // Step through the list of recognitions and display info for each one.
+        // Step through the list of recognitions and display info for each one.
         for (Recognition recognition : currentRecognitions) {
             double x = (recognition.getLeft() + recognition.getRight()) / 2 ;
             double y = (recognition.getTop()  + recognition.getBottom()) / 2 ;
@@ -498,7 +435,7 @@ public class FTCWiresAutonomous extends LinearOpMode {
             } else { //RED_RIGHT or BLUE_RIGHT
                 if (recognition.getLabel() == "Pixel" || recognition.getLabel() =="BlueElement" ||recognition.getLabel() =="RedElement") {
                     if (x < 300) // was <200 250 worked
-                        {
+                    {
                         identifiedSpikeMarkLocation = IDENTIFIED_SPIKE_MARK_LOCATION.MIDDLE;
                     } else {
                         identifiedSpikeMarkLocation = IDENTIFIED_SPIKE_MARK_LOCATION.RIGHT;
